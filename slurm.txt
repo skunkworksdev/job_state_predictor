@@ -197,7 +197,7 @@ srun echo hello -> 256 CPUs, 446GB
 srun echo hello -n 256 -> 256 CPUs, 446GB
 srun echo hello -n 257 -> 512, 446 GB, 2 nodes
 
-By default, requested is 1 node, 1 CPU, 100mb memory. By default, allocated is all available CPUs, 1 node, memory??
+By default, requested is 1 node, 1 CPU, max allocatable mem. memory. By default, allocated is all available CPUs, 1 node, max allocatable memory
 
 srun --cpus-per-task 1 echo hello: prints 256 times.
 
