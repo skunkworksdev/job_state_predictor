@@ -1,0 +1,232 @@
+On a 64GB RAM, 16 CPU machine
+
+srun echo "start process"
+
+sacct -j 1 --format JobID,QOS,Account,Partition,SubmitLine,NodeList
+JobID               QOS    Account  Partition           SubmitLine        NodeList
+------------ ---------- ---------- ---------- -------------------- ---------------
+1                normal       root      workq srun echo Start pro+       nid000001
+1.0                           root            srun echo Start pro+       nid000001
+
+sacct -j 1 --format ReqCPUS,ReqNodes,ReqMem,TimeLimit,JobName,WorkDir,Group
+ ReqCPUS ReqNodes     ReqMem  Timelimit    JobName              WorkDir     Group
+-------- -------- ---------- ---------- ---------- -------------------- ---------
+       1        1        54G  UNLIMITED       echo                /root      root
+      16        1                             echo
+
+sacct -j 1 --format User,Priority,Comment,State
+     User   Priority        Comment      State
+--------- ---------- -------------- ----------
+     root          1                 COMPLETED
+                                     COMPLETED
+
+sacct -j 1 --format Submit,Start,End,Exitcode
+             Submit               Start                 End ExitCode
+------------------- ------------------- ------------------- --------
+2025-03-11T11:54:11 2025-03-11T11:54:11 2025-03-11T11:54:12      0:0
+2025-03-11T11:54:11 2025-03-11T11:54:11 2025-03-11T11:54:12      0:0
+
+Array position can be obtained only for array jobs. Not possible to find GPU usage through ReqTRES.
+
+srun sleep 10
+
+sacct
+JobID           JobName  Partition    Account  AllocCPUS      State ExitCode
+------------ ---------- ---------- ---------- ---------- ---------- --------
+1                  echo      workq       root         16  COMPLETED      0:0
+1.0                echo                  root         16  COMPLETED      0:0
+2                 sleep      workq       root         16  COMPLETED      0:0
+2.0               sleep                  root         16  COMPLETED      0:0
+
+srun sleep ls
+/usr/bin/sleep: invalid time interval ‘ls’
+Try '/usr/bin/sleep --help' for more information.
+srun: error: nid000001: task 0: Exited with exit code 1
+srun: Terminating StepId=3.0
+
+sacct
+JobID           JobName  Partition    Account  AllocCPUS      State ExitCode
+------------ ---------- ---------- ---------- ---------- ---------- --------
+1                  echo      workq       root         16  COMPLETED      0:0
+1.0                echo                  root         16  COMPLETED      0:0
+2                 sleep      workq       root         16  COMPLETED      0:0
+2.0               sleep                  root         16  COMPLETED      0:0
+3                 sleep      workq       root         16     FAILED      1:0
+3.0               sleep                  root         16     FAILED      1:0
+
+./test.sh(contains srun sleep 60)
+^Csrun: interrupt (one more within 1 sec to abort)
+srun: StepId=4.0 task 0: running
+^Csrun: interrupt (one more within 1 sec to abort)
+srun: StepId=4.0 task 0: running
+^Csrun: sending Ctrl-C to StepId=4.0
+srun: forcing job termination
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+srun: Terminating StepId=4.0
+
+sacct
+JobID           JobName  Partition    Account  AllocCPUS      State ExitCode
+------------ ---------- ---------- ---------- ---------- ---------- --------
+1                  echo      workq       root         16  COMPLETED      0:0
+1.0                echo                  root         16  COMPLETED      0:0
+2                 sleep      workq       root         16  COMPLETED      0:0
+2.0               sleep                  root         16  COMPLETED      0:0
+3                 sleep      workq       root         16     FAILED      1:0
+3.0               sleep                  root         16     FAILED      1:0
+4                 sleep      workq       root         16 CANCELLED+      0:0
+4.0               sleep                  root         16 CANCELLED+      0:2
+
+sbatch test.sh
+Submitted batch job 9
+nid000001:~ # scontrol
+scontrol: ^C
+nid000001:~ # scontrol show job 9
+JobId=9 JobName=testJob
+   UserId=root(0) GroupId=root(0) MCS_label=N/A
+   Priority=1 Nice=0 Account=root QOS=normal
+   JobState=RUNNING Reason=None Dependency=(null)
+   Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0
+   RunTime=00:00:14 TimeLimit=00:10:00 TimeMin=N/A
+   SubmitTime=2025-03-11T12:40:33 EligibleTime=2025-03-11T12:40:33
+   AccrueTime=2025-03-11T12:40:33
+   StartTime=2025-03-11T12:40:34 EndTime=2025-03-11T12:50:34 Deadline=N/A
+   SuspendTime=None SecsPreSuspend=0 LastSchedEval=2025-03-11T12:40:34 Scheduler=Main
+   Partition=workq AllocNode:Sid=nid000001:6407
+   ReqNodeList=(null) ExcNodeList=(null)
+   NodeList=nid000001
+   BatchHost=nid000001
+   NumNodes=1 NumCPUs=16 NumTasks=1 CPUs/Task=1 ReqB:S:C:T=0:0:*:*
+   ReqTRES=cpu=1,mem=100M,node=1,billing=1
+   AllocTRES=cpu=16,mem=1600M,node=1,billing=16
+   Socks/Node=* NtasksPerN:B:S:C=0:0:*:* CoreSpec=*
+   MinCPUsNode=1 MinMemoryCPU=100M MinTmpDiskNode=0
+   Features=(null) DelayBoot=00:00:00
+   OverSubscribe=NO Contiguous=0 Licenses=(null) Network=(null)
+   Command=/root/test.sh
+   WorkDir=/root
+   StdErr=/root/slurm-9.out
+   StdIn=/dev/null
+   StdOut=/root/slurm-9.out
+   TresPerTask=cpu=1
+
+sacct
+
+ ...
+9               testJob      workq       root         16  COMPLETED      0:0
+9.batch           batch                  root         16  COMPLETED      0:0
+9.0                echo                  root          1  COMPLETED      0:0
+9.1            hostname                  root          1  COMPLETED      0:0
+9.2               sleep                  root          1  COMPLETED      0:0
+9.3                echo                  root          1  COMPLETED      0:0
+
+where test.sh is as follows:
+#!/bin/bash
+
+#SBATCH --job-name testJob
+#SBATCH --output testJob.out
+#SBATCH --ntasks 1
+#SBATCH --cpus-per-task 1
+#SBATCH --time 10:00
+#SBATCH --mem-per-cpu 100M
+
+srun echo "Start process"
+srun hostname
+srun sleep 30
+srun echo "End process"
+
+squeue -j 11 -o %all
+ACCOUNT|TRES_PER_NODE|MIN_CPUS|MIN_TMP_DISK|END_TIME|FEATURES|GROUP|OVER_SUBSCRIBE|JOBID|NAME|COMMENT|TIME_LIMIT|MIN_MEMORY|REQ_NODES|COMMAND|PRIORITY|QOS|REASON|ST|USER|RESERVATION|WCKEY|EXC_NODES|NICE|S:C:T|JOBID|EXEC_HOST|CPUS|NODES|DEPENDENCY|ARRAY_JOB_ID|GROUP|SOCKETS_PER_NODE|CORES_PER_SOCKET|THREADS_PER_CORE|ARRAY_TASK_ID|TIME_LEFT|TIME|NODELIST|CONTIGUOUS|PARTITION|PRIORITY|NODELIST(REASON)|START_TIME|STATE|UID|SUBMIT_TIME|LICENSES|CORE_SPEC|SCHEDNODES|WORK_DIR
+root|N/A|1|0|2025-03-11T12:55:34|(null)|root|NO|11|testJob|(null)|10:00|100M||/root/test.sh|0.00000000023283|normal|None|R|root|(null)|(null)||0|*:*:*|11|nid000001|16|1|(null)|11|0|*|*|*|N/A|9:52|0:08|nid000001|0|workq|1|nid000001|2025-03-11T12:45:34|RUNNING|0|2025-03-11T12:45:34|(null)|N/A|(null)|/root
+
+sbatch --hold test.sh
+Submitted batch job 20
+
+squeue -j 20 -o %all
+ACCOUNT|TRES_PER_NODE|MIN_CPUS|MIN_TMP_DISK|END_TIME|FEATURES|GROUP|OVER_SUBSCRIBE|JOBID|NAME|COMMENT|TIME_LIMIT|MIN_MEMORY|REQ_NODES|COMMAND|PRIORITY|QOS|REASON|ST|USER|RESERVATION|WCKEY|EXC_NODES|NICE|S:C:T|JOBID|EXEC_HOST|CPUS|NODES|DEPENDENCY|ARRAY_JOB_ID|GROUP|SOCKETS_PER_NODE|CORES_PER_SOCKET|THREADS_PER_CORE|ARRAY_TASK_ID|TIME_LEFT|TIME|NODELIST|CONTIGUOUS|PARTITION|PRIORITY|NODELIST(REASON)|START_TIME|STATE|UID|SUBMIT_TIME|LICENSES|CORE_SPEC|SCHEDNODES|WORK_DIR
+root|N/A|1|0|N/A|(null)|root|NO|20|testJob|(null)|10:00|100M||/root/test.sh|0.00000000000000|normal|JobHeldUser|PD|root|(null)|(null)||0|*:*:*|20|n/a|1|1|(null)|20|0|*|*|*|N/A|10:00|0:00||0|workq|0|(JobHeldUser)|N/A|PENDING|0|2025-03-11T13:07:35|(null)|N/A|(null)|/root
+
+scontrol release 20
+
+sbatch --hold test.sh
+Submitted batch job 21
+nid000001:~ # scontrol show job 21 -d
+JobId=21 JobName=testJob
+   UserId=root(0) GroupId=root(0) MCS_label=N/A
+   Priority=0 Nice=0 Account=root QOS=normal
+   JobState=PENDING Reason=JobHeldUser Dependency=(null)
+   Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0
+   DerivedExitCode=0:0
+   RunTime=00:00:00 TimeLimit=00:10:00 TimeMin=N/A
+   SubmitTime=2025-03-11T13:18:22 EligibleTime=Unknown
+   AccrueTime=Unknown
+   StartTime=Unknown EndTime=Unknown Deadline=N/A
+   SuspendTime=None SecsPreSuspend=0 LastSchedEval=2025-03-11T13:18:22 Scheduler=Main
+   Partition=workq AllocNode:Sid=nid000001:6407
+   ReqNodeList=(null) ExcNodeList=(null)
+   NodeList=
+   NumNodes=1-1 NumCPUs=1 NumTasks=1 CPUs/Task=1 ReqB:S:C:T=0:0:*:*
+   ReqTRES=cpu=1,mem=100M,node=1,billing=1
+   AllocTRES=(null)
+   Socks/Node=* NtasksPerN:B:S:C=0:0:*:* CoreSpec=*
+   MinCPUsNode=1 MinMemoryCPU=100M MinTmpDiskNode=0
+   Features=(null) DelayBoot=00:00:00
+   OverSubscribe=NO Contiguous=0 Licenses=(null) Network=(null)
+   Command=/root/test.sh
+   WorkDir=/root
+   StdErr=/root/slurm-21.out
+   StdIn=/dev/null
+   StdOut=/root/slurm-21.out
+   TresPerTask=cpu=1
+
+ didnt get GPU Usage
+ sacct doesnt return little info for running jobs
+
+ sacct -j 22 -l
+JobID        JobIDRaw        JobName  Partition  MaxVMSize  MaxVMSizeNode  MaxVMSizeTask  AveVMSize     MaxRSS MaxRSSNode MaxRSSTask     AveRSS MaxPages MaxPagesNode   MaxPagesTask   AvePages     MinCPU MinCPUNode MinCPUTask     AveCPU   NTasks  AllocCPUS    Elapsed      State ExitCode AveCPUFreq ReqCPUFreqMin ReqCPUFreqMax ReqCPUFreqGov     ReqMem ConsumedEnergy  MaxDiskRead MaxDiskReadNode MaxDiskReadTask    AveDiskRead MaxDiskWrite MaxDiskWriteNode MaxDiskWriteTask   AveDiskWrite    ReqTRES  AllocTRES TRESUsageInAve TRESUsageInMax TRESUsageInMaxNode TRESUsageInMaxTask TRESUsageInMin TRESUsageInMinNode TRESUsageInMinTask TRESUsageInTot TRESUsageOutMax TRESUsageOutMaxNode TRESUsageOutMaxTask TRESUsageOutAve TRESUsageOutTot
+------------ ------------ ---------- ---------- ---------- -------------- -------------- ---------- ---------- ---------- ---------- ---------- -------- ------------ -------------- ---------- ---------- ---------- ---------- ---------- -------- ---------- ---------- ---------- -------- ---------- ------------- ------------- ------------- ---------- -------------- ------------ --------------- --------------- -------------- ------------ ---------------- ---------------- -------------- ---------- ---------- -------------- -------------- ------------------ ------------------ -------------- ------------------ ------------------ -------------- --------------- ------------------- ------------------- --------------- ---------------
+22           22              testJob      workq                                                                                                                                                                                                              16   00:00:38    RUNNING      0:0                  Unknown       Unknown       Unknown       100M                                                                                                                                          billing=1+ billing=1+
+22.batch     22.batch          batch                                                                                                                                                                                                               1         16   00:00:38    RUNNING      0:0          0             0             0             0                         0                                                                                                                                      cpu=16,me+
+22.0         22.0               echo               178172K      nid000001              0    178172K      4552K  nid000001          0      4552K        0    nid000001              0          0   00:00:00  nid000001          0   00:00:00        1          1   00:00:00  COMPLETED      0:0      1.23M       Unknown       Unknown       Unknown                         0            0       nid000001               0              0        0.00M        nid000001                0          0.00M            cpu=1,mem+ cpu=00:00:00,+ cpu=00:00:00,+ cpu=nid000001,ene+ cpu=0,fs/disk=0,m+ cpu=00:00:00,+ cpu=nid000001,ene+ cpu=0,fs/disk=0,m+ cpu=00:00:00,+ energy=0,fs/di+ energy=nid000001,f+           fs/disk=0 energy=0,fs/di+ energy=0,fs/di+
+22.1         22.1           hostname               178172K      nid000001              0    178172K      3948K  nid000001          0      3948K        0    nid000001              0          0   00:00:00  nid000001          0   00:00:00        1          1   00:00:00  COMPLETED      0:0      1.97M       Unknown       Unknown       Unknown                         0            0       nid000001               0              0        0.00M        nid000001                0          0.00M            cpu=1,mem+ cpu=00:00:00,+ cpu=00:00:00,+ cpu=nid000001,ene+ cpu=0,fs/disk=0,m+ cpu=00:00:00,+ cpu=nid000001,ene+ cpu=0,fs/disk=0,m+ cpu=00:00:00,+ energy=0,fs/di+ energy=nid000001,f+           fs/disk=0 energy=0,fs/di+ energy=0,fs/di+
+22.2         22.2              sleep                                                                                                                                                                                                               1          1   00:00:38    RUNNING      0:0          0       Unknown       Unknown       Unknown                         0                                                                                                                                      cpu=1,mem+
+
+On a machine with 288 CPUs and 800GB+ memory
+
+Allocated
+srun echo hello -> 256 CPUs, 446GB
+srun echo hello -n 256 -> 256 CPUs, 446GB
+srun echo hello -n 257 -> 512, 446 GB, 2 nodes
+
+By default, requested is 1 node, 1 CPU, 100mb memory. By default, allocated is all available CPUs, 1 node, memory??
+
+srun --cpus-per-task 1 echo hello: prints 256 times.
+
+srun -n 1 --cpus-per-task 1 echo hello: prints 1 time.
+CPU allocated
+
+To allocate GPUs, use --gpus-per-node option in Sbatch
+
+scontrol output for pending job:
+TresPerNode=gres/gpu:2
+
+Slurm may allocate a different node other than the current node.
+That's why after I released job:
+scontrol output was:
+
+JOB_GRES=gpu:8
+     Nodes=nid001016 CPU_IDs=0-127 Mem=4096 GRES=gpu:8(IDX:0-7)
+
+there were only four GPUs on the current node.
+
+---gpus-per-task
+scontrol output for pending job:
+...
+TresBind=gres/gpu:per_task:2
+ TresPerTask=cpu=1,gres/gpu=2
+
+--gpus
+scontrol output for pending job:
+...
+TresPerJob=gres/gpu:2
+
+However, gpus are not allocated to a job. since nothing appears in allotters other than cpu and memory.
