@@ -230,3 +230,5 @@ scontrol output for pending job:
 TresPerJob=gres/gpu:2
 
 However, gpus are not allocated to a job. since nothing appears in allotters other than cpu and memory.
+
+The metrics reported by scontrol and squeue for a sbatch job are for the entire batch job. The metrics of the individual tasks(created by srun) are not available.
