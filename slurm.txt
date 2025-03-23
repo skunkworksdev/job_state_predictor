@@ -232,3 +232,40 @@ TresPerJob=gres/gpu:2
 However, gpus are not allocated to a job. since nothing appears in allotters other than cpu and memory.
 
 The metrics reported by scontrol and squeue for a sbatch job are for the entire batch job. The metrics of the individual tasks(created by srun) are not available.
+
+On slurm.conf file, MinJobAge is 300 which is 5 minutes. That's why after 5 minutes each completed job's information is removed.
+
+squeue -j 26850 --steps
+         STEPID     NAME PARTITION     USER      TIME NODELIST
+        26850.0    sleep     workq     root      0:05 nid001016
+    26850.batch    batch     workq     root      0:06 nid001016
+
+It shows current job step of the specified job that's running in the system.
+
+scontrol show step 26850.0
+StepId=26850.0 UserId=0 StartTime=2025-03-23T02:59:54 TimeLimit=UNLIMITED
+   State=RUNNING Partition=workq NodeList=nid001016
+   Nodes=1 CPUs=5 Tasks=1 Name=sleep Network=(null)
+   TRES=cpu=5,mem=222G,node=1
+   ResvPorts=20394-20395
+   CPUFreqReq=Default Dist=Cyclic
+   SrunHost:Pid=nid001016:36013
+   TresPerTask=cpu=4
+This command will work only if the specified step is running.
+
+scontrol show config shows the slurm configuration that has been set by the admin.
+
+sacctmgr show cluster
+   Cluster     ControlHost  ControlPort   RPC     Share GrpJobs       GrpTRES GrpSubmit MaxJobs       MaxTRES MaxSubmit     MaxWall                  QOS   Def QOS 
+---------- --------------- ------------ ----- --------- ------- ------------- --------- ------- ------------- --------- ----------- -------------------- --------- 
+       abc    20.140.214.2         6817 10496         1                                                                                           normal          
+
+scontrol show nodes:
+This shows information related to all the nodes in the cluster.
+
+In scontrol output, numcpus and numnodes is a range (alloc_cpus, maxcpus) if and only if MaxCPUs per node is specified in slurm.conf.
+
+sstat -j 26853
+JobID         MaxVMSize  MaxVMSizeNode  MaxVMSizeTask  AveVMSize     MaxRSS MaxRSSNode MaxRSSTask     AveRSS MaxPages MaxPagesNode   MaxPagesTask   AvePages     MinCPU MinCPUNode MinCPUTask     AveCPU   NTasks AveCPUFreq ReqCPUFreqMin ReqCPUFreqMax ReqCPUFreqGov ConsumedEnergy  MaxDiskRead MaxDiskReadNode MaxDiskReadTask  AveDiskRead MaxDiskWrite MaxDiskWriteNode MaxDiskWriteTask AveDiskWrite TRESUsageInAve TRESUsageInMax TRESUsageInMaxNode TRESUsageInMaxTask TRESUsageInMin TRESUsageInMinNode TRESUsageInMinTask TRESUsageInTot TRESUsageOutAve TRESUsageOutMax TRESUsageOutMaxNode TRESUsageOutMaxTask TRESUsageOutMin TRESUsageOutMinNode TRESUsageOutMinTask TRESUsageOutTot 
+------------ ---------- -------------- -------------- ---------- ---------- ---------- ---------- ---------- -------- ------------ -------------- ---------- ---------- ---------- ---------- ---------- -------- ---------- ------------- ------------- ------------- -------------- ------------ --------------- --------------- ------------ ------------ ---------------- ---------------- ------------ -------------- -------------- ------------------ ------------------ -------------- ------------------ ------------------ -------------- --------------- --------------- ------------------- ------------------- --------------- ------------------- ------------------- --------------- 
+26853.1         116108K      nid001016              0      3096K      4752K  nid001016          0         1M        0    nid001016              0          0   00:00:00  nid001016          0   00:00:00        4         2G       Unknown       Unknown       Unknown              0         5017       nid001016               0         5017        1.00M        nid001016                0        1.00M cpu=00:00:00,+ cpu=00:00:00,+ cpu=nid001016,ene+ cpu=00:00:00,fs/d+ cpu=00:00:00,+ cpu=nid001016,ene+ cpu=00:00:00,fs/d+ cpu=00:00:00,+ energy=0,fs/di+ energy=0,fs/di+ energy=nid001016,f+           fs/disk=0 energy=0,fs/di+ energy=nid001016,f+           fs/disk=0 energy=0,fs/di+ 
