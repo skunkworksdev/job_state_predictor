@@ -277,3 +277,120 @@ The nodes in the nodelist contain the outputs after execution(of the format slur
 srun is interactive while sbatch allows executing scripts in background.
 
 eligible time is the time at which the scheduler clears the job for execution.
+
+With batch script as follows:
+#!/bin/bash
+
+#SBATCH --job-name=array
+#SBATCH --array=1-20
+#SBATCH --time=01:00:00
+#SBATCH --ntasks=1
+#SBATCH --mem=1G
+#SBATCH --output=array_%A-%a.out
+
+# Print the task id.
+srun bash -c "sleep 10; echo 'My SLURM_ARRAY_TASK_ID:' $SLURM_ARRAY_TASK_ID"
+
+the output of squeue is as follows:
+
+             JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)
+     26892_[12-20]     workq    array     root PD       0:00      1 (Resources)
+           26892_8     workq    array     root  R       0:04      1 nid001032
+           26892_9     workq    array     root  R       0:04      1 nid001033
+          26892_10     workq    array     root  R       0:04      1 nid001034
+          26892_11     workq    array     root  R       0:04      1 nid001035
+           26892_1     workq    array     root  R       0:05      1 nid001016
+           26892_2     workq    array     root  R       0:05      1 nid001018
+           26892_3     workq    array     root  R       0:05      1 nid001020
+           26892_4     workq    array     root  R       0:05      1 nid001000
+           26892_5     workq    array     root  R       0:05      1 nid001001
+           26892_6     workq    array     root  R       0:05      1 nid001002
+           26892_7     workq    array     root  R       0:05      1 nid001003
+
+scontrol show job
+JobId=26893 ArrayJobId=26892 ArrayTaskId=1 JobName=array
+   UserId=root(0) GroupId=root(0) MCS_label=N/A
+   Priority=1 Nice=0 Account=root QOS=normal
+   JobState=COMPLETING Reason=None Dependency=(null)
+   Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0
+   RunTime=00:00:11 TimeLimit=01:00:00 TimeMin=N/A
+   SubmitTime=2025-03-24T11:42:43 EligibleTime=2025-03-24T11:42:43
+   AccrueTime=2025-03-24T11:42:43
+   StartTime=2025-03-24T11:42:43 EndTime=2025-03-24T11:42:54 Deadline=N/A
+   SuspendTime=None SecsPreSuspend=0 LastSchedEval=2025-03-24T11:42:43 Scheduler=Main
+   Partition=workq AllocNode:Sid=nid001034:43704
+   ReqNodeList=(null) ExcNodeList=(null)
+   NodeList=nid001016
+   BatchHost=nid001016
+   NumNodes=1 NumCPUs=128 NumTasks=1 CPUs/Task=1 ReqB:S:C:T=0:0:*:*
+   ReqTRES=cpu=1,mem=1G,node=1,billing=1
+   AllocTRES=cpu=128,mem=1G,node=1,billing=128
+   Socks/Node=* NtasksPerN:B:S:C=0:0:*:* CoreSpec=*
+   MinCPUsNode=1 MinMemoryNode=1G MinTmpDiskNode=0
+   Features=(null) DelayBoot=00:00:00
+   OverSubscribe=NO Contiguous=0 Licenses=(null) Network=(null)
+   Command=/root/test.sh
+   WorkDir=/root
+   StdErr=/root/array_26892-1.out
+   StdIn=/dev/null
+   StdOut=/root/array_26892-1.out
+   
+
+JobId=26894 ArrayJobId=26892 ArrayTaskId=2 JobName=array
+   UserId=root(0) GroupId=root(0) MCS_label=N/A
+   Priority=1 Nice=0 Account=root QOS=normal
+   JobState=COMPLETING Reason=None Dependency=(null)
+   Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0
+   RunTime=00:00:11 TimeLimit=01:00:00 TimeMin=N/A
+   SubmitTime=2025-03-24T11:42:43 EligibleTime=2025-03-24T11:42:43
+   AccrueTime=2025-03-24T11:42:43
+   StartTime=2025-03-24T11:42:43 EndTime=2025-03-24T11:42:54 Deadline=N/A
+   SuspendTime=None SecsPreSuspend=0 LastSchedEval=2025-03-24T11:42:43 Scheduler=Main
+   Partition=workq AllocNode:Sid=nid001034:43704
+   ReqNodeList=(null) ExcNodeList=(null)
+   NodeList=nid001018
+   BatchHost=nid001018
+   NumNodes=1 NumCPUs=128 NumTasks=1 CPUs/Task=1 ReqB:S:C:T=0:0:*:*
+   ReqTRES=cpu=1,mem=1G,node=1,billing=1
+   AllocTRES=cpu=128,mem=1G,node=1,billing=128
+   Socks/Node=* NtasksPerN:B:S:C=0:0:*:* CoreSpec=*
+   MinCPUsNode=1 MinMemoryNode=1G MinTmpDiskNode=0
+   Features=(null) DelayBoot=00:00:00
+   OverSubscribe=NO Contiguous=0 Licenses=(null) Network=(null)
+   Command=/root/test.sh
+   WorkDir=/root
+   StdErr=/root/array_26892-2.out
+   StdIn=/dev/null
+   StdOut=/root/array_26892-2.out
+
+and so on ...
+
+Interestingly in the last...
+
+JobId=26892 ArrayJobId=26892 ArrayTaskId=20 JobName=array
+   UserId=root(0) GroupId=root(0) MCS_label=N/A
+   Priority=1 Nice=0 Account=root QOS=normal
+   JobState=RUNNING Reason=None Dependency=(null)
+   Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0
+   RunTime=00:00:03 TimeLimit=01:00:00 TimeMin=N/A
+   SubmitTime=2025-03-24T11:42:43 EligibleTime=2025-03-24T11:42:43
+   AccrueTime=2025-03-24T11:42:43
+   StartTime=2025-03-24T11:42:57 EndTime=2025-03-24T12:42:57 Deadline=N/A
+   SuspendTime=None SecsPreSuspend=0 LastSchedEval=2025-03-24T11:42:57 Scheduler=Main
+   Partition=workq AllocNode:Sid=nid001034:43704
+   ReqNodeList=(null) ExcNodeList=(null)
+   NodeList=nid001032
+   BatchHost=nid001032
+   NumNodes=1 NumCPUs=256 NumTasks=1 CPUs/Task=1 ReqB:S:C:T=0:0:*:*
+   ReqTRES=cpu=1,mem=1G,node=1,billing=1
+   AllocTRES=cpu=256,mem=1G,node=1,billing=256
+   Socks/Node=* NtasksPerN:B:S:C=0:0:*:* CoreSpec=*
+   MinCPUsNode=1 MinMemoryNode=1G MinTmpDiskNode=0
+   Features=(null) DelayBoot=00:00:00
+   OverSubscribe=NO Contiguous=0 Licenses=(null) Network=(null)
+   Command=/root/test.sh
+   WorkDir=/root
+   StdErr=/root/array_26892-20.out
+   StdIn=/dev/null
+   StdOut=/root/array_26892-20.out
+
