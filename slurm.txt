@@ -394,3 +394,24 @@ JobId=26892 ArrayJobId=26892 ArrayTaskId=20 JobName=array
    StdIn=/dev/null
    StdOut=/root/array_26892-20.out
 
+Script to request GPUs
+#!/bin/bash
+
+##Resource Request
+
+#SBATCH --job-name CudaJob
+#SBATCH --output result.out   ## filename of the output; the %j is equivalent to jobID; default is slurm-[jobID].out
+#SBATCH --ntasks=1  ## number of tasks (analyses) to run
+#SBATCH --partition=BlancaPeak
+#SBATCH --gpus-per-task=1 # number of gpus per task
+#SBATCH --mem-per-gpu=100M # Memory allocated for the job
+#SBATCH --time=0-00:10:00  ## time for analysis (day-hour:min:sec)
+
+
+##Compile the cuda script using the nvcc compiler
+nvcc -v -o stats -L /usr/local/cuda/lib/ stats.cu(https://hpc.nmsu.edu/discovery/slurm/gpu-jobs/)
+
+## Run the script
+srun stats
+
+stats.cu must be present on the node where script runs.
