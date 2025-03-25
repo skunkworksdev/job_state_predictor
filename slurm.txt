@@ -416,7 +416,7 @@ srun stats
 
 stats.cu must be present on the node where script runs.
 
-after adding AccountingStorageTRES=gres/gpu, we can track GPU usage in slurm.
+after adding AccountingStorageTRES=gres/gpu to slurm.conf and running scontrol reconfigure on the slurmctld node, we can track GPU usage in slurm.
 
 For above script, the scontrol show -d and sacct output are as follows:
 JobId=26946 JobName=CudaJob
