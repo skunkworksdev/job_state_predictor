@@ -481,3 +481,16 @@ Submitted batch job 38
 To disable: remove option from slurm.conf, remove job_submit.lua from /etc/slurm, run scontrol reconfigure.
 
 Note: The script may be cached by slurm. To resolve this clear the contents of /var/spool/slurm (CAREFULLY. Else, slurm wont start. I deleted  /var/spool/slurm/ctld. Then I had recreate ctld, create slurmctld.log and slurmsched.log all the three with appropriate permissions and start)
+
+Slurm Prologslurmctld script: Upon Job Allocation, this script is run.
+
+To add this: create prolog_slurmctld.sh script in any location(better /etc/slurm), add PrologSlurmctld=/etc/slurm/prolog_slurmctld.sh to slurm.conf, scontrol reconfigure.
+
+For both job submit and prologslurmctld scripts, the output was created in /var/spool/slurm/ctld directory.
+
+To disable same steps as job submit script.
+
+prolog slurmctld script:
+
+#!/bin/bash
+echo "Job $SLURM_JOB_ID is starting"
