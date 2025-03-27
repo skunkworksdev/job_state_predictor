@@ -460,8 +460,24 @@ JobID           JobName                                          AllocTRES    El
 26946.batch       batch                 cpu=288,gres/gpu=4,mem=400M,node=1   00:00:02  COMPLETED      0:0 
 26946.0           stats                 cpu=288,gres/gpu=1,mem=100M,node=1   00:00:01  COMPLETED      0:0
 
-Job Submit Plugins: create job_submit.lua in /etc/slurm folder. Goto slurm.conf, add JobSubmitPlugins=lua. scontrol reconfigure.
+Job Submit Plugins(lua support must be preenabled): create job_submit.lua in /etc/slurm folder. Goto slurm.conf, add JobSubmitPlugins=lua. scontrol reconfigure.
 
 To run a script on job submission. Make sure that the script is executable by slurm user and is in a location that's accessible by slurm. Mention the script's location in job_submit.lua.
 
-Note: job_submit plugin does not have access to the job_id of a submiited job. Only few fields are available to job_desc.
+Note: job_submit plugin does not have access to the job_id of a submiited job. Only few fields are available to job_desc.(look down. only interactive job is printed. That's because job_id is nil)
+
+The script I created is follows(print the argument).
+#!/bin/bash
+echo $1
+
+srun echo hello
+srun: interactive_job
+hello
+
+sbatch test.sh
+sbatch: interactive_job
+Submitted batch job 38
+
+To disable: remove option from slurm.conf, remove job_submit.lua from /etc/slurm, run scontrol reconfigure.
+
+Note: The script may be cached by slurm. To resolve this clear the contents of /var/spool/slurm (CAREFULLY. Else, slurm wont start. I deleted  /var/spool/slurm/ctld. Then I had recreate ctld, create slurmctld.log and slurmsched.log all the three with appropriate permissions and start)
