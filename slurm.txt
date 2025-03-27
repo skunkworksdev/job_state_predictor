@@ -496,3 +496,12 @@ prolog slurmctld script:
 echo "Job $SLURM_JOB_ID is starting"
 
 Note: In both the cases(job submit and prolog), slurm may output error: /etc/slurm not found, but it should execute correctly. The reason for this error is that usually, /etc/slurm might not be there in the worker nodes. Creating this directory on all worker nodes should solve the problem. (Workdir is set to /etc/slurm in both cases).
+
+scontrol listpids
+PID      JOBID    STEPID   LOCALID GLOBALID
+50628    27040    0        0       0       
+50623    27040    0        -       -       
+50614    27040    batch    0       0       
+50610    27040    batch    -       -       
+50615    27040    batch    -       -       
+50616    27040    batch    -       -      
