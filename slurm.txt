@@ -409,7 +409,7 @@ Script to request GPUs
 
 
 ##Compile the cuda script using the nvcc compiler
-nvcc -v -o stats -L /usr/local/cuda/lib/ stats.cu(https://hpc.nmsu.edu/discovery/slurm/gpu-jobs/)
+/usr/local/cuda/bin/nvcc -v -o stats -L /usr/local/cuda/lib/ stats.cu(https://hpc.nmsu.edu/discovery/slurm/gpu-jobs/)
 
 ## Run the script
 srun stats
