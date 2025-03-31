@@ -4,12 +4,11 @@ import os
 import logging
 import re
 import subprocess
+import json
+import urllib.request
 
 # Configure logging
 logging.basicConfig(filename="/var/log/slurm/epilog.log", level=logging.INFO, format="%(asctime)s %(message)s")
-
-slurm_job_logs_location = '/var/log/slurm/slurm_job_logs'
-os.makedirs(slurm_job_logs_location, exist_ok=True)
 
 job_id = os.getenv("SLURM_JOB_ID")
 logging.info(f"Job {job_id} has been completed.")
@@ -42,17 +41,22 @@ if check:
 else:
     nodes.append(nodelist)
 
+job_dict = {}
+job_dict['job_id'] = job_id
+job_dict['nodes'] = nodes
+job_dict['stdout'] = os.getenv("SLURM_JOB_STDOUT")
+job_dict['stderr'] = os.getenv("SLURM_JOB_STDERR")
+
 logging.info(f"Actual Hostnames={','.join(nodes)}")
-logging.info("Copying job logs from nodes")
+logging.info("Sending data to Log Collector")
 
-for node in nodes:
-    stdout_path = os.getenv("SLURM_JOB_STDOUT")
-    stderr_path = os.getenv("SLURM_JOB_STDERR")
-    result = subprocess.run(['scp', f'{node}:{stdout_path}', f'{slurm_job_logs_location}/{job_id}/{job_id}_output.log'], capture_output=True, text=True)
-    if stdout_path != stderr_path and result.returncode == 0:
-        subprocess.run(['scp', f'{node}:{stdout_path}', f'{slurm_job_logs_location}/{job_id}/{job_id}_error.log'])
-    if result.returncode == 0:
-        logging.info(f"Copied job logs from {node} successfully")
-    else:
-        logging.info(f"Could not copy job logs from {node} due to error:{result.stderr}")
+myurl = "http://localhost:5010"
 
+req = urllib.request.Request(myurl)
+req.add_header('Content-Type', 'application/json; charset=utf-8')
+payload = json.dumps(job_dict).encode('utf-8')
+try:
+    with urllib.request.urlopen(req, payload) as response:
+        logging.info(f"Job Info sent succesfully. {response.read().decode('utf-8')}")
+except Exception as e:
+    logging.info(f"Data transfer failed. {e}")
