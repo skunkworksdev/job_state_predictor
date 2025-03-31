@@ -503,3 +503,14 @@ PID      JOBID    STEPID   LOCALID GLOBALID
 50610    27040    batch    -       -       
 50615    27040    batch    -       -       
 50616    27040    batch    -       -      
+
+On a node with 256 processors:
+srun -n 257 echo hello
+
+NodeList=nid[001016,001018]
+
+we can use scontrol show hostnames <nodelist> to get 
+nid001016
+nid001018
+
+We can use EpilogSlurmctld to take actions at the end of a job.(Refer epilogslurmctld.py).
