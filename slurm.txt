@@ -513,4 +513,4 @@ we can use scontrol show hostnames <nodelist> to get
 nid001016
 nid001018
 
-We can use EpilogSlurmctld to take actions at the end of a job.(Refer epilogslurmctld.py).
+We can use EpilogSlurmctld to take actions at the end of a job.(Refer epilogslurmctld.py). However, the scp part of the script may fail since it is usually run as the user slurm who might not have required permissions.
