@@ -1,0 +1,31 @@
+Use Slurm docker cluster (giov) with the same  version as mentioned in GitHub. Trying to use later versions will not work due to cgroup/v2 issues.
+
+Build takes 10min on machine with 40 CPUs and 125 GB memory.
+
+SlurmctldDebug should be set to info or higher.
+
+For batch jobs, a submit message appears (with uid) with the job id. Both batch and interactive jobs have two messages: one for allocation and one for completion. Allocation message has nodelist and NumCPUs. Completion message has exit status.
+
+As per Chatgpt, we can set timestamps in the slurmctld log, but it is not necessary.
+
+squeue is better than scontrol for obtaining specific information.
+
+In case of array jobs, we can check if it's an array job or not by the squeue job id. If some jobs are started while others are pending, the pending set will look like _[1-2] (squeue returnz multiple lines for array jobs). Otherwise, if the entire array job is pending, the square brackets rule still applies. Applying some logic over the squeue job IDs can get us both array task IDs and array length. c[1-5,8-9]. Array jobs have the same configuration unless changed by scontrol. Hence, it makes sense to record array job information only once and record updated states separately.
+
+Majority of the static information can be obtained at the submit time. Little more information can be obtained at allocation time (allocated resources, nodelist and start time). Even little information can be obtained at completion time (run_time, submit_line).
+
+For sstat to work, relevant plugins have to be enabled (job acct gather, job energy gather).
+
+The log captures suspended, timeout, OOM, cancelled, fail(non zero exit code) job states. However, for node states, idle and allocated are never explicit. One has to see the nodelist and from that, say if it's idle or allocated. Other states, such as drain, down, reserved, maint, future, power up, power down, fail are captured only if the administrator explicitly issues requests using scontrol update. Otherwise, there is no mention of the state and one has to rely on other techniques to see what is the state. For example, power up and power down require several options to be enabled in slurm.conf file. Using this it's simple to note that idle nodes will be powered down automatically. If the EplilogSlurmctld script takes a while to complete and there's no other job on that node, state is completing. But if the script throws an error, state is draining. Not responding is automatically captured. Down is also captured. Before slurmctld starts, the state is unknown. This along with the nodes and partition information are present in the slurm.conf file.
+
+If job submit plugins are used, we can overcome the limitation of not knowing the job id by keeping track of the jobs created so far. If 3 jobs have already been submitted, the next job's id will be 4.
+
+https://hpcc.umd.edu/hpcc/help/slurmenv.html
+
+https://slurm.schedmd.com/cpu_management.html
+
+Slurm high throughput
+
+Slurm prolog epilog
+
+Slurm job submit plugin 
